@@ -70,6 +70,7 @@ public interface MessageTree extends Cloneable {
 
 	public Message getMessage();
 
+	// 消息
 	public void setMessage(Message message);
 
 	public String getMessageId();

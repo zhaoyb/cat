@@ -18,19 +18,6 @@
  */
 package com.dianping.cat.status;
 
-import java.net.URL;
-import java.net.URLClassLoader;
-import java.util.Calendar;
-import java.util.List;
-import java.util.Map;
-import java.util.Map.Entry;
-
-import org.codehaus.plexus.personality.plexus.lifecycle.phase.Initializable;
-import org.codehaus.plexus.personality.plexus.lifecycle.phase.InitializationException;
-import org.unidal.helper.Threads.Task;
-import org.unidal.lookup.annotation.Inject;
-import org.unidal.lookup.annotation.Named;
-
 import com.dianping.cat.Cat;
 import com.dianping.cat.configuration.ClientConfigManager;
 import com.dianping.cat.configuration.NetworkInterfaceManager;
@@ -43,188 +30,211 @@ import com.dianping.cat.message.internal.MilliSecondTimer;
 import com.dianping.cat.message.spi.MessageStatistics;
 import com.dianping.cat.status.model.entity.Extension;
 import com.dianping.cat.status.model.entity.StatusInfo;
+import java.net.URL;
+import java.net.URLClassLoader;
+import java.util.Calendar;
+import java.util.List;
+import java.util.Map;
+import java.util.Map.Entry;
+import org.codehaus.plexus.personality.plexus.lifecycle.phase.Initializable;
+import org.codehaus.plexus.personality.plexus.lifecycle.phase.InitializationException;
+import org.unidal.helper.Threads.Task;
+import org.unidal.lookup.annotation.Inject;
+import org.unidal.lookup.annotation.Named;
 
 @Named
 public class StatusUpdateTask implements Task, Initializable {
-	@Inject
-	private MessageStatistics m_statistics;
 
-	@Inject
-	private ClientConfigManager m_manager;
+    @Inject
+    private MessageStatistics m_statistics;
 
-	private boolean m_active = true;
+    @Inject
+    private ClientConfigManager m_manager;
 
-	private String m_ipAddress;
+    private boolean m_active = true;
 
-	private long m_interval = 60 * 1000; // 60 seconds
+    private String m_ipAddress;
 
-	private String m_jars;
+    private long m_interval = 60 * 1000; // 60 seconds
 
-	private void buildClasspath() {
-		ClassLoader loader = StatusUpdateTask.class.getClassLoader();
-		StringBuilder sb = new StringBuilder();
+    private String m_jars;
 
-		buildClasspath(loader, sb);
-		if (sb.length() > 0) {
-			m_jars = sb.substring(0, sb.length() - 1);
-		}
-	}
+    private void buildClasspath() {
+        ClassLoader loader = StatusUpdateTask.class.getClassLoader();
+        StringBuilder sb = new StringBuilder();
 
-	private void buildClasspath(ClassLoader loader, StringBuilder sb) {
-		if (loader instanceof URLClassLoader) {
-			URL[] urLs = ((URLClassLoader) loader).getURLs();
-			for (URL url : urLs) {
-				String jar = parseJar(url.toExternalForm());
+        buildClasspath(loader, sb);
+        if (sb.length() > 0) {
+            m_jars = sb.substring(0, sb.length() - 1);
+        }
+    }
 
-				if (jar != null) {
-					sb.append(jar).append(',');
-				}
-			}
-			ClassLoader parent = loader.getParent();
+    private void buildClasspath(ClassLoader loader, StringBuilder sb) {
+        if (loader instanceof URLClassLoader) {
+            URL[] urLs = ((URLClassLoader) loader).getURLs();
+            for (URL url : urLs) {
+                String jar = parseJar(url.toExternalForm());
 
-			buildClasspath(parent, sb);
-		}
-	}
+                if (jar != null) {
+                    sb.append(jar).append(',');
+                }
+            }
+            ClassLoader parent = loader.getParent();
 
-	private void buildExtensionData(StatusInfo status) {
-		StatusExtensionRegister res = StatusExtensionRegister.getInstance();
-		List<StatusExtension> extensions = res.getStatusExtension();
-		int length = extensions.size();
+            buildClasspath(parent, sb);
+        }
+    }
 
-		for (int i = 0; i < length; i++) {
-			StatusExtension extension = extensions.get(i);
-			String id = extension.getId();
-			String des = extension.getDescription();
-			Map<String, String> propertis = extension.getProperties();
-			Extension item = status.findOrCreateExtension(id).setDescription(des);
+    /**
+     *  扩展自定义数据
+     *
+     * @param status
+     */
+    private void buildExtensionData(StatusInfo status) {
+        StatusExtensionRegister res = StatusExtensionRegister.getInstance();
+        List<StatusExtension> extensions = res.getStatusExtension();
+        int length = extensions.size();
 
-			for (Entry<String, String> entry : propertis.entrySet()) {
-				try {
-					double value = Double.parseDouble(entry.getValue());
-					item.findOrCreateExtensionDetail(entry.getKey()).setValue(value);
-				} catch (Exception e) {
-					Cat.logError("StatusExtension can only be double type", e);
-				}
-			}
-		}
-	}
+        for (int i = 0; i < length; i++) {
+            StatusExtension extension = extensions.get(i);
+            String id = extension.getId();
+            String des = extension.getDescription();
+            Map<String, String> propertis = extension.getProperties();
+            Extension item = status.findOrCreateExtension(id).setDescription(des);
 
-	@Override
-	public String getName() {
-		return "StatusUpdateTask";
-	}
+            for (Entry<String, String> entry : propertis.entrySet()) {
+                try {
+                    double value = Double.parseDouble(entry.getValue());
+                    item.findOrCreateExtensionDetail(entry.getKey()).setValue(value);
+                } catch (Exception e) {
+                    Cat.logError("StatusExtension can only be double type", e);
+                }
+            }
+        }
+    }
 
-	@Override
-	public void initialize() throws InitializationException {
-		m_ipAddress = NetworkInterfaceManager.INSTANCE.getLocalHostAddress();
-	}
+    @Override
+    public String getName() {
+        return "StatusUpdateTask";
+    }
 
-	private String parseJar(String path) {
-		if (path.endsWith(".jar")) {
-			int index = path.lastIndexOf('/');
+    @Override
+    public void initialize() throws InitializationException {
+        m_ipAddress = NetworkInterfaceManager.INSTANCE.getLocalHostAddress();
+    }
 
-			if (index > -1) {
-				return path.substring(index + 1);
-			}
-		}
-		return null;
-	}
+    private String parseJar(String path) {
+        if (path.endsWith(".jar")) {
+            int index = path.lastIndexOf('/');
 
-	@Override
-	public void run() {
-		// try to wait cat client init success
-		try {
-			Thread.sleep(10 * 1000);
-		} catch (InterruptedException e) {
-			return;
-		}
+            if (index > -1) {
+                return path.substring(index + 1);
+            }
+        }
+        return null;
+    }
 
-		while (true) {
-			Calendar cal = Calendar.getInstance();
-			int second = cal.get(Calendar.SECOND);
+    /**
+     * 上传客户端基本信息
+     */
+    @Override
+    public void run() {
+        // try to wait cat client init success
+        // 等待客户端启动成功
+        try {
+            Thread.sleep(10 * 1000);
+        } catch (InterruptedException e) {
+            return;
+        }
 
-			// try to avoid send heartbeat at 59-01 second
-			if (second < 2 || second > 58) {
-				try {
-					Thread.sleep(1000);
-				} catch (InterruptedException e) {
-					// ignore it
-				}
-			} else {
-				break;
-			}
-		}
+        while (true) {
+            Calendar cal = Calendar.getInstance();
+            int second = cal.get(Calendar.SECOND);
 
-		try {
-			buildClasspath();
-		} catch (Exception e) {
-			e.printStackTrace();
-		}
-		MessageProducer cat = Cat.getProducer();
-		Transaction reboot = cat.newTransaction("System", "Reboot");
+            // try to avoid send heartbeat at 59-01 second
+            // 如果在这个时间段，则暂停一下，意思是59-01这段时间 不发送心跳
+            if (second < 2 || second > 58) {
+                try {
+                    Thread.sleep(1000);
+                } catch (InterruptedException e) {
+                    // ignore it
+                }
+            } else {
+                break;
+            }
+        }
 
-		reboot.setStatus(Message.SUCCESS);
-		cat.logEvent("Reboot", NetworkInterfaceManager.INSTANCE.getLocalHostAddress(), Message.SUCCESS, null);
-		reboot.complete();
+        try {
+            buildClasspath();
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        MessageProducer cat = Cat.getProducer();
+        Transaction reboot = cat.newTransaction("System", "Reboot");
 
-		while (m_active) {
-			long start = MilliSecondTimer.currentTimeMillis();
+        reboot.setStatus(Message.SUCCESS);
+        cat.logEvent("Reboot", NetworkInterfaceManager.INSTANCE.getLocalHostAddress(), Message.SUCCESS, null);
+        reboot.complete();
 
-			if (m_manager.isCatEnabled()) {
-				Transaction t = cat.newTransaction("System", "Status");
-				Heartbeat h = cat.newHeartbeat("Heartbeat", m_ipAddress);
-				StatusInfo status = new StatusInfo();
+        while (m_active) {
+            long start = MilliSecondTimer.currentTimeMillis();
 
-				t.addData("dumpLocked", m_manager.isDumpLocked());
-				StatusInfoCollector collector = new StatusInfoCollector(m_statistics, m_jars);
+            if (m_manager.isCatEnabled()) {
+                Transaction t = cat.newTransaction("System", "Status");
+                Heartbeat h = cat.newHeartbeat("Heartbeat", m_ipAddress);
 
-				try {
-					status.accept(collector.setDumpLocked(m_manager.isDumpLocked()));
+                StatusInfo status = new StatusInfo();
 
-					buildExtensionData(status);
-					h.addData(status.toString());
-					h.setStatus(Message.SUCCESS);
-				} catch (Throwable e) {
-					h.setStatus(e);
-					cat.logError(e);
-				} finally {
-					h.complete();
-				}
-				Cat.logEvent("Heartbeat", "jstack", Event.SUCCESS, collector.getJstackInfo());
-				t.setStatus(Message.SUCCESS);
-				t.complete();
-			}
+                t.addData("dumpLocked", m_manager.isDumpLocked());
+                StatusInfoCollector collector = new StatusInfoCollector(m_statistics, m_jars);
 
-			try {
-				long current = System.currentTimeMillis() / 1000 / 60;
-				int min = (int) (current % (60));
+                try {
+                    status.accept(collector.setDumpLocked(m_manager.isDumpLocked()));
+                    // 扩展数据
+                    buildExtensionData(status);
+                    h.addData(status.toString());
+                    h.setStatus(Message.SUCCESS);
+                } catch (Throwable e) {
+                    h.setStatus(e);
+                    cat.logError(e);
+                } finally {
+                    h.complete();
+                }
+                Cat.logEvent("Heartbeat", "jstack", Event.SUCCESS, collector.getJstackInfo());
+                t.setStatus(Message.SUCCESS);
+                t.complete();
+            }
 
-				// refresh config 3 minute
-				if (min % 3 == 0) {
-					m_manager.refreshConfig();
-				}
-			} catch (Exception e) {
-				// ignore
-			}
+            try {
+                long current = System.currentTimeMillis() / 1000 / 60;
+                int min = (int) (current % (60));
 
-			long elapsed = MilliSecondTimer.currentTimeMillis() - start;
+                // refresh config 3 minute
+                if (min % 3 == 0) {
+                    m_manager.refreshConfig();
+                }
+            } catch (Exception e) {
+                // ignore
+            }
 
-			if (elapsed < m_interval) {
-				try {
-					Thread.sleep(m_interval - elapsed);
-				} catch (InterruptedException e) {
-					break;
-				}
-			}
-		}
-	}
+            long elapsed = MilliSecondTimer.currentTimeMillis() - start;
 
-	public void setInterval(long interval) {
-		m_interval = interval;
-	}
+            if (elapsed < m_interval) {
+                try {
+                    Thread.sleep(m_interval - elapsed);
+                } catch (InterruptedException e) {
+                    break;
+                }
+            }
+        }
+    }
 
-	@Override
-	public void shutdown() {
-		m_active = false;
-	}
+    public void setInterval(long interval) {
+        m_interval = interval;
+    }
+
+    @Override
+    public void shutdown() {
+        m_active = false;
+    }
 }

@@ -253,6 +253,14 @@ public class ChannelManager implements Task {
 		return "TcpSocketSender-ChannelManager";
 	}
 
+	/**
+	 *
+	 * 初始化连接
+	 *
+	 * @param addresses
+	 * @param serverConfig
+	 * @return
+	 */
 	private ChannelHolder initChannel(List<InetSocketAddress> addresses, String serverConfig) {
 		try {
 			int len = addresses.size();
@@ -367,6 +375,10 @@ public class ChannelManager implements Task {
 		}
 	}
 
+	/**
+	 *  循环 获取路由，检测路由连接
+	 *
+	 */
 	@Override
 	public void run() {
 		while (m_active) {

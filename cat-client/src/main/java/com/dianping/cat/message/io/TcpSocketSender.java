@@ -81,6 +81,7 @@ public class TcpSocketSender implements Task, MessageSender, LogEnabled {
 
 	private boolean m_active;
 
+	// 错误计数
 	private AtomicInteger m_errors = new AtomicInteger();
 
 	@Override
@@ -97,9 +98,12 @@ public class TcpSocketSender implements Task, MessageSender, LogEnabled {
 	public void initialize(List<InetSocketAddress> addresses) {
 		m_channelManager = new ChannelManager(m_logger, addresses, m_configManager, m_factory);
 
+		// 启动线程  路由更新和连接
 		Threads.forGroup("cat").start(this);
+		// 启动线程 合并消息 发送消息
 		Threads.forGroup("cat").start(m_channelManager);
 
+		//钩子
 		Runtime.getRuntime().addShutdownHook(new Thread() {
 			@Override
 			public void run() {
@@ -231,6 +235,11 @@ public class TcpSocketSender implements Task, MessageSender, LogEnabled {
 		}
 	}
 
+	/**
+	 *
+	 * 合并消息，发送消息
+	 *
+	 */
 	@Override
 	public void run() {
 		m_active = true;
@@ -276,11 +285,18 @@ public class TcpSocketSender implements Task, MessageSender, LogEnabled {
 		LocalAggregator.aggregate(tree);
 	}
 
+	/**
+	 * 发送消息
+	 *
+	 * @param channel
+	 * @param tree
+	 */
 	public void sendInternal(ChannelFuture channel, MessageTree tree) {
 		if (tree.getMessageId() == null) {
 			tree.setMessageId(m_factory.getNextId());
 		}
 
+		// 消息编码
 		ByteBuf buf = m_codec.encode(tree);
 
 		int size = buf.readableBytes();

@@ -250,6 +250,7 @@ public class DefaultMessageProducer implements MessageProducer {
 	public Transaction newTransaction(String type, String name) {
 		// this enable CAT client logging cat message without explicit setup
 		if (!m_manager.hasContext()) {
+			// 创建线程threadlocal
 			m_manager.setup();
 		}
 

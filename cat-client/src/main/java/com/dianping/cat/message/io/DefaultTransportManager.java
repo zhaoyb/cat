@@ -52,6 +52,12 @@ public class DefaultTransportManager implements TransportManager, Initializable,
 		return m_tcpSocketSender;
 	}
 
+	/**
+	 *
+	 * 初始化连接
+	 *
+	 * @throws InitializationException
+	 */
 	@Override
 	public void initialize() throws InitializationException {
 		List<Server> servers = m_configManager.getServers();

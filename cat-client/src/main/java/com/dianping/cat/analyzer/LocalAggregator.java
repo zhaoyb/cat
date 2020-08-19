@@ -71,7 +71,9 @@ public class LocalAggregator {
 				long start = System.currentTimeMillis();
 
 				try {
+					// 发送transaction
 					TransactionAggregator.getInstance().sendTransactionData();
+					// 发送event
 					EventAggregator.getInstance().sendEventData();
 				} catch (Exception ex) {
 					Cat.logError(ex);
@@ -79,6 +81,7 @@ public class LocalAggregator {
 
 				long duration = System.currentTimeMillis() - start;
 
+				// 时间对齐
 				if (duration >= 0 && duration < 1000) {
 					try {
 						Thread.sleep(1000 - duration);

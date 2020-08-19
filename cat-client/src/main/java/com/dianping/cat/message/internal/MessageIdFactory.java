@@ -140,6 +140,13 @@ public class MessageIdFactory {
 		return sb.toString();
 	}
 
+	/**
+	 *
+	 * 生成ID
+	 *
+	 * @param domain
+	 * @return
+	 */
 	public String getNextId(String domain) {
 		if (domain.equals(m_domain)) {
 			return getNextId();
@@ -235,6 +242,7 @@ public class MessageIdFactory {
 		File mark = createMarkFile(domain);
 		m_markFile = new RandomAccessFile(mark, "rw");
 		m_markChannel = m_markFile.getChannel();
+		// 一个1MB的文件
 		m_byteBuffer = m_markChannel.map(MapMode.READ_WRITE, 0, 1024 * 1024L);
 		m_idPrefix = initIdPrefix(getTimestamp(), false);
 		m_idPrefixOfMultiMode = initIdPrefix(getTimestamp(), true);

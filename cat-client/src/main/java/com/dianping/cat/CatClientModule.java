@@ -44,6 +44,7 @@ public class CatClientModule extends AbstractModule {
 		ctx.info("Current working directory is " + System.getProperty("user.dir"));
 
 		// initialize milli-second resolution level timer
+		// 时间初始化
 		MilliSecondTimer.initialize();
 
 		// tracking thread start/stop
@@ -60,8 +61,10 @@ public class CatClientModule extends AbstractModule {
 		if (clientConfigManager.isCatEnabled()) {
 			// start status update task
 			StatusUpdateTask statusUpdateTask = ctx.lookup(StatusUpdateTask.class);
+			// 启动线程，开始上传CPU，Memory，Disk，GC数据
 			Threads.forGroup("cat").start(statusUpdateTask);
 
+			// 聚合数据上传
 			Threads.forGroup("cat").start(new LocalAggregator.DataUploader());
 
 			LockSupport.parkNanos(10 * 1000 * 1000L); // wait 10 ms

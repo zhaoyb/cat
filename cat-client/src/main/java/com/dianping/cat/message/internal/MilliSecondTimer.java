@@ -51,6 +51,7 @@ public class MilliSecondTimer {
 			m_isWindows = true;
 			m_baseTime = System.currentTimeMillis();
 
+			// 时间对齐
 			while (true) {
 				LockSupport.parkNanos(100000); // 0.1 ms
 

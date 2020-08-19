@@ -114,6 +114,7 @@ public class NativeMessageCodec implements MessageCodec {
 
 			buf.writeInt(0); // place-holder
 
+			// head
 			Codec.HEADER.encode(ctx, buf, null);
 
 			Message msg = tree.getMessage();

@@ -20,6 +20,13 @@ package com.dianping.cat.analyzer;
 
 public class DurationComputer {
 
+	/**
+	 *
+	 * 数据修正，比如622  变为600
+	 *
+	 * @param duration
+	 * @return
+	 */
 	public static int computeDuration(int duration) {
 		if (duration < 1) {
 			return 1;
@@ -36,6 +43,7 @@ public class DurationComputer {
 		} else if (duration < 1000000) {
 			return duration - duration % 10000;
 		} else {
+			// 这个分支  还没明白
 			int dk = 524288;
 
 			if (duration > 3600 * 1000) {

@@ -43,8 +43,9 @@ public class EventAggregator {
 	}
 
 	public ConcurrentHashMap<String, ConcurrentHashMap<String, EventData>> getAndResetEvents() {
+		// 历史数据
 		ConcurrentHashMap<String, ConcurrentHashMap<String, EventData>> cloned = m_events;
-
+		// 重置
 		m_events = new ConcurrentHashMap<String, ConcurrentHashMap<String, EventData>>();
 
 		for (Map.Entry<String, ConcurrentHashMap<String, EventData>> entry : cloned.entrySet()) {
@@ -99,6 +100,7 @@ public class EventAggregator {
 	}
 
 	public void sendEventData() {
+		// 历史数据
 		ConcurrentHashMap<String, ConcurrentHashMap<String, EventData>> events = getAndResetEvents();
 		boolean hasData = false;
 
@@ -111,6 +113,7 @@ public class EventAggregator {
 			}
 		}
 
+		// 如果有数据
 		if (hasData) {
 			Transaction t = Cat.newTransaction(CatConstants.CAT_SYSTEM, this.getClass().getSimpleName());
 			MessageTree tree = Cat.getManager().getThreadLocalMessageTree();
