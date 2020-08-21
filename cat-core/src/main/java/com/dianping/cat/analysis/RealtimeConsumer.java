@@ -53,9 +53,17 @@ public class RealtimeConsumer extends ContainerHolder implements MessageConsumer
 
 	private Logger m_logger;
 
+
+	/**
+	 *
+	 * 消费数据
+	 *
+	 * @param tree
+	 */
 	@Override
 	public void consume(MessageTree tree) {
 		long timestamp = tree.getMessage().getTimestamp();
+		// 一段时间 对应一个Period
 		Period period = m_periodManager.findPeriod(timestamp);
 
 		if (period != null) {

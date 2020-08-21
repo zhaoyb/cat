@@ -52,6 +52,13 @@ public class CatServlet extends AbstractContainerServlet {
 		}
 	}
 
+	/**
+	 *
+	 *  初始化
+	 *
+	 * @param servletConfig
+	 * @throws ServletException
+	 */
 	@Override
 	protected void initComponents(ServletConfig servletConfig) throws ServletException {
 		try {

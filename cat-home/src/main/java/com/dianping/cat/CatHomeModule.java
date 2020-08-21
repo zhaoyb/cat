@@ -75,6 +75,7 @@ public class CatHomeModule extends AbstractModule {
 
 	@Override
 	protected void setup(ModuleContext ctx) throws Exception {
+		// 接收端
 		final TcpSocketReceiver messageReceiver = ctx.lookup(TcpSocketReceiver.class);
 
 		messageReceiver.init();

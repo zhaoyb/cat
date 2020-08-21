@@ -35,6 +35,7 @@ public class PeriodTask implements Task, LogEnabled {
 
 	private MessageAnalyzer m_analyzer;
 
+	// 就是对BlockingQueue进行了包装
 	private MessageQueue m_queue;
 
 	private long m_startTime;
@@ -61,9 +62,12 @@ public class PeriodTask implements Task, LogEnabled {
 	}
 
 	public boolean enqueue(MessageTree tree) {
+		// 是否有资格消息
 		if (m_analyzer.isEligable(tree)) {
+			// 放入队列
 			boolean result = m_queue.offer(tree);
 
+			// 放入队列失败，队列溢出
 			if (!result) { // trace queue overflow
 				m_queueOverflow++;
 
@@ -102,6 +106,11 @@ public class PeriodTask implements Task, LogEnabled {
 		return m_analyzer.getClass().getSimpleName() + "-" + cal.get(Calendar.HOUR_OF_DAY) + "-" + m_index;
 	}
 
+	/**
+	 *
+	 * 解析器从队列中拿出数据进行解析
+	 *
+	 */
 	@Override
 	public void run() {
 		try {

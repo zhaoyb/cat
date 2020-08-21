@@ -121,6 +121,7 @@ public class PeriodManager implements Task {
 		m_active = false;
 	}
 
+	// 创建一个新的Period
 	private void startPeriod(long startTime) {
 		long endTime = startTime + m_strategy.getDuration();
 		Period period = new Period(startTime, endTime, m_analyzerManager, m_serverStateManager, m_logger);

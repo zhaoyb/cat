@@ -62,6 +62,7 @@ public class Period {
 		m_serverStateManager = serverStateManager;
 		m_logger = logger;
 
+		// 所有的分析器名称
 		List<String> names = m_analyzerManager.getAnalyzerNames();
 
 		m_tasks = new HashMap<String, List<PeriodTask>>();
@@ -90,18 +91,25 @@ public class Period {
 		boolean success = true;
 		String domain = tree.getDomain();
 
+
+		//消息广播，每个分析器都会拿到数据
 		for (Entry<String, List<PeriodTask>> entry : m_tasks.entrySet()) {
 			List<PeriodTask> tasks = entry.getValue();
 			int length = tasks.size();
 			int index = 0;
 			boolean manyTasks = length > 1;
 
+			// 如果分析器下 开启了多个分析器实例(类似于多线程)， 则hash这个，这里使用domain来hash， 相同domain还是会进入到同一个分析器线程实例
 			if (manyTasks) {
+				// domain hash,
 				index = Math.abs(domain.hashCode()) % length;
 			}
 			PeriodTask task = tasks.get(index);
+
+			// 加入到队列中，
 			boolean enqueue = task.enqueue(tree);
 
+			// 如果加入失败，并且有多个实例，则尝试另外的实例
 			if (!enqueue) {
 				if (manyTasks) {
 					task = tasks.get((index + 1) % length);
@@ -116,6 +124,7 @@ public class Period {
 			}
 		}
 
+		// 加入失败，则[消息丢失计数] 累加
 		if ((!success) && (!tree.isProcessLoss())) {
 			m_serverStateManager.addMessageTotalLoss(tree.getDomain(), 1);
 

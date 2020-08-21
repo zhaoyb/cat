@@ -27,6 +27,7 @@ import com.dianping.cat.message.spi.MessageTree;
 
 public class DefaultMessageQueue implements MessageQueue {
 
+	// 注意这里使用了BlockingQueue, 平安公司的小伙伴用disruptor做了替代
 	private BlockingQueue<MessageTree> m_queue;
 
 	public DefaultMessageQueue(int size) {

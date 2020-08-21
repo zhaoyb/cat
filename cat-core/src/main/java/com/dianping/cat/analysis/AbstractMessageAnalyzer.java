@@ -53,15 +53,25 @@ public abstract class AbstractMessageAnalyzer<R> extends ContainerHolder impleme
 
 	private AtomicBoolean m_active = new AtomicBoolean(true);
 
+	/**
+	 *
+	 * 当前类是一个抽象类，这里从队列中拿出消息，并进行具体的解析
+	 *
+	 * @param queue
+	 */
 	@Override
 	public void analyze(MessageQueue queue) {
+		// 循环从队列中拿出消息进行解析
 		while (!isTimeout() && isActive()) {
+			// 拿到消息
 			MessageTree tree = queue.poll();
 
 			if (tree != null) {
 				try {
+					// 具体的解析
 					process(tree);
 				} catch (Throwable e) {
+					// 解析失败，错误计数累加
 					m_errors++;
 
 					if (m_errors == 1 || m_errors % 10000 == 0) {
@@ -71,6 +81,7 @@ public abstract class AbstractMessageAnalyzer<R> extends ContainerHolder impleme
 			}
 		}
 
+		// 消费剩余消息
 		while (true) {
 			MessageTree tree = queue.poll();
 

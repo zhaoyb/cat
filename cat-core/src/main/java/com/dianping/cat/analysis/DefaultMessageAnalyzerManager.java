@@ -117,14 +117,22 @@ public class DefaultMessageAnalyzerManager extends ContainerHolder
 		return m_analyzerNames;
 	}
 
+	/**
+	 *
+	 * 消息分析器初始化
+	 *
+	 * @throws InitializationException
+	 */
 	@Override
 	public void initialize() throws InitializationException {
+		// 获取所有的消息分析器  目前有12个分析器
 		Map<String, MessageAnalyzer> map = lookupMap(MessageAnalyzer.class);
 
 		for (MessageAnalyzer analyzer : map.values()) {
 			analyzer.destroy();
 		}
 
+		// 填充
 		m_analyzerNames = new ArrayList<String>(map.keySet());
 
 		Collections.sort(m_analyzerNames, new Comparator<String>() {
@@ -156,6 +164,7 @@ public class DefaultMessageAnalyzerManager extends ContainerHolder
 				disables.add(name);
 			}
 		}
+		// 分析器名称
 		for (String name : disables) {
 			m_analyzerNames.remove(name);
 		}
